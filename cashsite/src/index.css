@@ -1,4 +1,7 @@
 @import "tailwindcss";
+html {
+  scroll-behavior: smooth;
+}
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -47,12 +50,13 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+/* Neutralize the Vite template blue hover border */
 button:hover {
-  border-color: #646cff;
+  border-color: inherit;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none; /* remove default blue outline */
 }
 
 @media (prefers-color-scheme: light) {
@@ -78,6 +82,7 @@ button:focus-visible {
  box-shadow: inset 0 0 80px rgb(110 231 183 / 0.05);
  will-change: transform;
  transform: translate3d(-50%, -50%, 0);
+ pointer-events: none; /* let clicks pass through */
 }
 
 @keyframes spin {
