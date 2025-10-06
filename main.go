@@ -126,6 +126,6 @@ func mustFetchPoolData() PoolData {
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		log.Fatalf("Error loading .env file")
 	}
 }

@@ -363,8 +363,8 @@ interface PoolData {
   saturation: number; // 0-100
   uptimePct: number; // 0-100
   liveStake: number; // ADA
-  pledge: number; // ADA
-  blocksEpoch: number;
+  activePledge: number; // ADA
+  currentEpochBlocks: number;
   lifetimeBlocks: number;
 }
 
@@ -386,8 +386,8 @@ function readPoolDataFromDom(): PoolData | null {
       saturation: Number(d.saturation),
       uptimePct: Number(d.uptimePct),
       liveStake: Number(d.liveStake),
-      pledge: Number(d.pledge),
-      blocksEpoch: Number(d.blocksEpoch),
+      activePledge: Number(d.ledge),
+      currentEpochBlocks: Number(d.blocksEpoch),
       lifetimeBlocks: Number(d.lifetimeBlocks),
     } as PoolData;
     if (!Object.values(maybe).some((v) => Number.isNaN(v))) return maybe;
@@ -481,14 +481,6 @@ export const DataSection = () => {
     if (d) setData(d);
     else {
       // Set default values as template placeholders
-      setData({
-        saturation: 43,
-        uptimePct: 100,
-        liveStake: 3250000,
-        pledge: 150000,
-        blocksEpoch: 2,
-        lifetimeBlocks: 128
-      });
     }
   }, []);
 
@@ -526,11 +518,11 @@ export const DataSection = () => {
               </div>
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Pledge</div>
-                <div className="text-2xl font-bold text-white break-words">{(data?.pledge ?? 0).toLocaleString()} ADA</div>
+                <div className="text-2xl font-bold text-white break-words">{(data?.activePledge ?? 0).toLocaleString()} ADA</div>
               </div>
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Blocks (Epoch)</div>
-                <div className="text-2xl font-bold text-white break-words">{data?.blocksEpoch ?? 0}</div>
+                <div className="text-2xl font-bold text-white break-words">{data?.currentEpochBlocks ?? 0}</div>
               </div>
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Blocks (Lifetime)</div>
