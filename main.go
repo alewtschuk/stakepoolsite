@@ -10,18 +10,29 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type PoolData struct {
-	Saturation string `json:"saturationLevel"`
-	//UptimePct      float64 `json:"uptimePct"`
-	LiveStake      string `json:"liveStake"`
-	Pledge         string `json:"activePledge"`
-	BlocksEpoch    int64  `json:"currentEpochBlocks"`
-	LifetimeBlocks int64  `json:"lifetimeBlocks"`
+	Saturation      string  `json:"saturationLevel"`
+	PoolStatus      int64   `json:"status"`
+	LiveStake       string  `json:"liveStake"`
+	Pledge          string  `json:"activePledge"`
+	BlocksEpoch     int64   `json:"currentEpochBlocks"`
+	LifetimeBlocks  int64   `json:"lifetimeBlocks"`
+	PledgeMet       string  `json:"pledgeMet"`
+	DeclaredPledge  string  `json:"declaredPledge"`
+	Margin          string  `json:"margin"`
+	SaturationFloat float64 `json:"saturationFloat"`
+}
+
+type TempInfo struct {
+	Status         bool   `json:"status"`
+	DeclaredPledge string `json:"declaredPledge"`
+	Margin         string `json:"margin"`
 }
 
 func main() {
@@ -82,21 +93,72 @@ npx serve cashsite/dist
 
 func mustFetchPoolData() PoolData {
 
-	const BASEURL string = "https://api.cardanoscan.io/api/v1/pool/"
-	const POOLID string = "d50b69e0ea9704d0130c6384fe0a509521833b2e472fc177258e5b1d"
+	const BASEURL string = "https://api.cardanoscan.io/api/v1/pool"
+	const POOLID string = "?poolId=d50b69e0ea9704d0130c6384fe0a509521833b2e472fc177258e5b1d"
+	const HTTPCALL string = "GET"
 	var APIKEY string = os.Getenv("API_KEY")
 	if APIKEY == "" {
 		log.Fatalf("ERROR: API key is empty")
 	}
 
-	// Setup request
-	request, err := http.NewRequest("GET", fmt.Sprintf(BASEURL+"stats?poolId=%s", POOLID), nil)
+	// Setup and build request
+	statsRequest := buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, "/stats")
+	//detailsRequest := buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, "")
+
+	// Fetch API response
+	statsBody := fetchResponse(statsRequest)
+	//detailsBody := fetchResponse(detailsRequest)
+
+	// Initalize and extract data into the struct
+	statsData := getResponseData(statsBody, PoolData{})
+
+	//detailsData := getResponseData(detailsBody, TempInfo{})
+
+	fmt.Printf("Saturation: %v\nLive stake: %v\nPledge: %v\nBlocks Epoch: %v\nLifetime Blocks: %v\n", statsData.Saturation, statsData.LiveStake, statsData.Pledge, statsData.BlocksEpoch, statsData.LifetimeBlocks)
+
+	liveStakeData, err := strconv.Atoi(statsData.LiveStake)
+	if err != nil {
+		log.Fatalf("ERROR: Cannot convert live stake to integer")
+	}
+
+	pledgeData, err := strconv.Atoi(statsData.Pledge)
+	if err != nil {
+		log.Fatalf("ERROR: Cannot convert pledge to integer")
+	}
+
+	saturationFloat, err := strconv.ParseFloat(statsData.Saturation, 64)
+	if err != nil {
+		log.Fatalf("ERROR: Cannot convert saturation to integer")
+	}
+
+	liveStakeFloat := float64(liveStakeData)
+	pledgeFloat := float64(pledgeData)
+
+	stakedAda := liveStakeFloat / 1000000
+	pledgedAda := pledgeFloat / 1000000
+
+	statsData.LiveStake = fmt.Sprintf("%.2f", stakedAda)
+	statsData.Pledge = fmt.Sprintf("%.2f", pledgedAda)
+	statsData.SaturationFloat = saturationFloat
+
+	return statsData
+}
+
+func buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, urlExtension string) *http.Request {
+
+	request, err := http.NewRequest(HTTPCALL, fmt.Sprint(BASEURL+urlExtension+POOLID), nil)
 	if err != nil {
 		log.Fatalf("Error creating request %v", err)
 	}
 
 	// Add header
 	request.Header.Add("apiKey", APIKEY)
+
+	return request
+
+}
+
+func fetchResponse(request *http.Request) []byte {
 
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -112,16 +174,22 @@ func mustFetchPoolData() PoolData {
 		log.Fatalf("ERROR: Body cannot be read %v", err)
 	}
 
-	data := PoolData{}
-	err = json.Unmarshal(body, &data)
+	return body
+}
+
+func getResponseData[T any](body []byte, dataStruct T) T {
+
+	err := json.Unmarshal(body, &dataStruct)
 	if err != nil {
 		log.Fatalf("ERROR: JSON unmarshaling error %v", err)
 	}
 
-	fmt.Printf("Saturation: %v\nLive stake: %v\nPledge: %v\nBlocks Epoch: %v\nLifetime Blocks: %v\n", data.Saturation, data.LiveStake, data.Pledge, data.BlocksEpoch, data.LifetimeBlocks)
-
-	return data
+	return dataStruct
 }
+
+// func getTempData(BASEURL, POOLID, APIKEY string) TempInfo {
+
+// }
 
 func init() {
 	err := godotenv.Load()

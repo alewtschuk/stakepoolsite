@@ -360,12 +360,14 @@ export const InfrastructureSection = () => {
 
 // ------- Data Dashboard Utilities -------
 interface PoolData {
-  saturation: number; // 0-100
-  uptimePct: number; // 0-100
+  saturationFloat: number; // 0-100
+  status: number; // 0-100
   liveStake: number; // ADA
   activePledge: number; // ADA
   currentEpochBlocks: number;
   lifetimeBlocks: number;
+  pledgeMet: string;
+  declaredPledge: string;
 }
 
 function readPoolDataFromDom(): PoolData | null {
@@ -383,12 +385,14 @@ function readPoolDataFromDom(): PoolData | null {
   if (sec) {
     const d = (sec as HTMLElement).dataset as any;
     const maybe = {
-      saturation: Number(d.saturation),
-      uptimePct: Number(d.uptimePct),
+      saturationFloat: Number(d.saturationFloat),
+      status: Number(d.status),
       liveStake: Number(d.liveStake),
       activePledge: Number(d.ledge),
       currentEpochBlocks: Number(d.blocksEpoch),
       lifetimeBlocks: Number(d.lifetimeBlocks),
+      declaredPledge: String(d.declaredPledge),
+      pledgeMet: String(d.pledgeMet)
     } as PoolData;
     if (!Object.values(maybe).some((v) => Number.isNaN(v))) return maybe;
   }
@@ -463,7 +467,7 @@ const Gauge: React.FC<{
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="text-2xl font-bold text-white">
-            {Math.round(clamped)}{suffix}
+            {(clamped)}{suffix}
           </div>
           <div className="text-sm text-slate-400">{label}</div>
         </div>
@@ -484,8 +488,8 @@ export const DataSection = () => {
     }
   }, []);
 
-  const saturation = useAnimatedNumber(data?.saturation ?? 0);
-  const uptime = useAnimatedNumber(data?.uptimePct ?? 0);
+  const saturation = useAnimatedNumber(data?.saturationFloat ?? 0);
+  const uptime = useAnimatedNumber(data?.status ?? 0);
 
   return (
     <section id="usage" className="relative bg-neutral-900 text-white py-16 md:py-24 border-t border-neutral-800 scroll-mt-20 md:scroll-mt-24">
@@ -493,9 +497,6 @@ export const DataSection = () => {
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Data</h2>
           <p className="mt-3 text-slate-400">Pool metrics. Updated every hour on the hour</p>
-          {/* Go template option 1: inject JSON here
-          <script id="pool-data" type="application/json">{"saturation": {{ .Saturation }}, "uptimePct": {{ .Uptime }}, "liveStake": {{ .LiveStake }}, "pledge": {{ .Pledge }}, "blocksEpoch": {{ .BlocksEpoch }}, "lifetimeBlocks": {{ .LifetimeBlocks }}}</script>
-          */}
         </div>
 
         <div className="grid gap-8 md:grid-cols-2">
@@ -504,7 +505,7 @@ export const DataSection = () => {
             <h3 className="text-lg font-semibold mb-6">Health</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 place-items-center">
               <Gauge value={saturation} label="Saturation" color="#60a5fa" />
-              <Gauge value={uptime} label="Uptime" color="#22c55e" />
+              <Gauge value={uptime} label="Status" color="#22c55e" />
             </div>
           </div>
 
@@ -519,6 +520,14 @@ export const DataSection = () => {
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Pledge</div>
                 <div className="text-2xl font-bold text-white break-words">{(data?.activePledge ?? 0).toLocaleString()} ADA</div>
+              </div>
+              <div className="rounded-xl border border-neutral-800 p-4">
+                <div className="text-slate-400 text-sm">Declared Pledge</div>
+                <div className="text-2xl font-bold text-white break-words">{(data?.declaredPledge ?? 0).toLocaleString()} ADA</div>
+              </div>
+              <div className="rounded-xl border border-neutral-800 p-4">
+                <div className="text-slate-400 text-sm">Pledge Met?</div>
+                <div className="text-2xl font-bold text-white break-words">{data?.pledgeMet ?? 0}</div>
               </div>
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Blocks (Epoch)</div>
