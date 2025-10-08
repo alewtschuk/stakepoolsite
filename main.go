@@ -89,7 +89,6 @@ go run main.go
 # open the static build
 npx serve cashsite/dist
 */
-//TODO: Implement handling the newly returned datatypes for the front end
 
 func mustFetchPoolData() PoolData {
 
