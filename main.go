@@ -25,12 +25,16 @@ type PoolData struct {
 	DeclaredPledge  string  `json:"declaredPledge"`
 	Margin          int64   `json:"margin"`
 	SaturationFloat float64 `json:"saturationFloat"`
+	PoolID          string  `json:"poolId"`
+	Ticker          string  `json:"ticker"`
 }
 
 type TempInfo struct {
 	Status         bool   `json:"status"`
 	DeclaredPledge string `json:"declaredPledge"`
 	Margin         string `json:"margin"`
+	PoolID         string `json:"poolId"`
+	Ticker         string `json:"ticker"`
 }
 
 func main() {
@@ -72,22 +76,6 @@ func pretty(b []byte) []byte {
 	return buf.Bytes()
 }
 
-// TODO: Implement checking logic to save and revert old version of site if data cannot be retrieved
-/*TODO: Implement logic for rebuild using
-
-# from repo root
-cd cashsite
-npm ci
-npm run build
-cd ..
-
-# now inject
-go run main.go
-
-# open the static build
-npx serve cashsite/dist
-*/
-
 func mustFetchPoolData() PoolData {
 
 	const BASEURL string = "https://api.cardanoscan.io/api/v1/pool"
@@ -111,7 +99,7 @@ func mustFetchPoolData() PoolData {
 	detailsData := getResponseData(detailsBody, TempInfo{})
 
 	fmt.Printf("Saturation: %v\nLive stake: %v\nPledge: %v\nBlocks Epoch: %v\nLifetime Blocks: %v\n", statsData.Saturation, statsData.LiveStake, statsData.Pledge, statsData.BlocksEpoch, statsData.LifetimeBlocks)
-	fmt.Printf("Status: %v\nDeclared Pledge: %v\nMargin: %v\n", detailsData.Status, detailsData.DeclaredPledge, detailsData.Margin)
+	fmt.Printf("Status: %v\nDeclared Pledge: %v\nMargin: %v\nTicker: %v\nPoolID: %v\n", detailsData.Status, detailsData.DeclaredPledge, detailsData.Margin, detailsData.Ticker, detailsData.PoolID)
 
 	liveStakeData, err := strconv.Atoi(statsData.LiveStake)
 	if err != nil {
@@ -146,7 +134,8 @@ func mustFetchPoolData() PoolData {
 	statsData.SaturationFloat = saturationFloat
 	statsData.Margin = int64(marginNum)
 	statsData.DeclaredPledge = fmt.Sprintf("%.2f", initialPledge)
-
+	statsData.Ticker = detailsData.Ticker
+	statsData.PoolID = detailsData.PoolID
 	decPldg, err := strconv.Atoi(detailsData.DeclaredPledge)
 	if err != nil {
 		log.Fatalf("ERROR: Cannot convert saturation to integer")
@@ -209,10 +198,6 @@ func getResponseData[T any](body []byte, dataStruct T) T {
 
 	return dataStruct
 }
-
-// func getTempData(BASEURL, POOLID, APIKEY string) TempInfo {
-
-// }
 
 // func init() {
 // 	err := godotenv.Load()

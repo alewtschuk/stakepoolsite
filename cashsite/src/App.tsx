@@ -369,6 +369,8 @@ interface PoolData {
   pledgeMet: string;
   declaredPledge: string;
   margin: number;
+  ticker: string;
+  poolId: string;
 }
 
 function readPoolDataFromDom(): PoolData | null {
@@ -395,6 +397,8 @@ function readPoolDataFromDom(): PoolData | null {
       declaredPledge: String(d.declaredPledge),
       pledgeMet: String(d.pledgeMet),
       margin: Number(d.margin),
+      ticker: String(d.ticker),
+      poolId: String(d.poolID)
     } as PoolData;
     if (!Object.values(maybe).some((v) => Number.isNaN(v))) return maybe;
   }
@@ -546,6 +550,41 @@ const Gauge: React.FC<{
   );
 };
 
+const TruncatedIdWithCopy: React.FC<{ id: string | undefined }> = ({ id }) => {
+  const [isCopied, setIsCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    if (!id) return;
+    navigator.clipboard.writeText(id);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+  };
+
+  if (!id || id === '0') {
+    return <div className="text-2xl font-bold text-white">0</div>;
+  }
+
+  const truncatedId = `${id.substring(0, 6)}...${id.substring(id.length - 6)}`;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-2xl font-bold text-white break-all">{truncatedId}</span>
+      <button onClick={handleCopy} className="text-slate-400 hover:text-white transition-colors p-1 rounded-md focus:outline-none focus-visible:ring-2 ring-sky-500">
+        {isCopied ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5 text-green-500">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+};
+
 
 
 // ------- Data Section -------
@@ -575,16 +614,26 @@ export const DataSection = () => {
         <div className="grid gap-8 md:grid-cols-2">
           {/* Gauges */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6">
-            <h3 className="text-lg font-semibold mb-6">Health</h3>
+            <h3 className="text-lg font-semibold mb-6">Pool Stats</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 place-items-center">
               <Gauge value={saturation} label="Saturation" color="#60a5fa" />
               <StatusGauge value={uptime} label="Status" color="#22c55e" />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                <div className="rounded-xl border border-neutral-800 p-4">
+                  <div className="text-slate-400 text-sm">Ticker</div>
+                  <div className="text-2xl font-bold text-white break-words">${(data?.ticker ?? 0)}</div>
+                </div>
+                <div className="rounded-xl border border-neutral-800 p-4">
+                  <div className="text-slate-400 text-sm">Pool ID</div>
+                  <TruncatedIdWithCopy id={data?.poolId} />
+                </div>
+              </div>
           </div>
 
           {/* Key Figures */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6">
-            <h3 className="text-lg font-semibold mb-6">Key Figures</h3>
+            <h3 className="text-lg font-semibold mb-6">Key Metrics</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-neutral-800 p-4">
                 <div className="text-slate-400 text-sm">Live Stake</div>
