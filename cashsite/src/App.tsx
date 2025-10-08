@@ -203,7 +203,69 @@ export const HeaderNav = () => {
   );
 };
 
+const StakingModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="relative rounded-2xl border border-neutral-800 bg-neutral-900 p-6 md:p-8 max-w-lg w-full text-white"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      >
+        <button 
+          onClick={onClose} 
+          className="absolute top-3 right-3 text-slate-400 hover:text-white transition-colors p-1 rounded-md focus:outline-none focus-visible:ring-2 ring-sky-500"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <h3 className="text-2xl font-bold mb-4">Stake With Us</h3>
+        <p className="text-slate-400 mb-6">
+          Follow these steps to delegate your ADA to our pool.
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-slate-300">1. Copy our Pool ID</label>
+            <div className="mt-1">
+              <TruncatedIdWithCopy id="d50b69e0ea9704d0130c6384fe0a509521833b2e472fc177258e5b1d" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-300">2. Use a CIP-13 Compatible Wallet</label>
+            <p className="text-xs text-slate-500 mt-1">
+              If your wallet supports CIP-13 links, this button will open the delegation interface directly.
+            </p>
+            <a
+              href="web+cardano://stake?d50b69e0ea9704d0130c6384fe0a509521833b2e472fc177258e5b1d"
+              className="group mt-2 inline-flex h-11 items-center gap-2 rounded-xl bg-sky-500 px-5 text-sm text-white outline-none focus:outline-none focus-visible:ring-2 ring-sky-500 hover:shadow-[0_0_0_4px_rgba(3,105,161,0.5)] transition-shadow duration-200"
+            >
+              <span className="font-semibold">Stake via CIP-13 Link</span>
+            </a>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-300">3. Or, Stake Manually</label>
+            <p className="text-xs text-slate-500 mt-1">
+              In your wallet's staking or delegation center, search for our Pool ID (copied in step 1) or our ticker: <span className="font-bold text-slate-300">$CASH</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const HeroSection = () => {
+  const [isStakingModalOpen, setStakingModalOpen] = React.useState(false);
   // Responsive ring sizes that scale with viewport while clamping to sensible bounds
   const RingsSize: Array<string> = [
     'clamp(22rem, 60vmin, 38rem)',
@@ -247,17 +309,31 @@ export const HeroSection = () => {
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white">Cash and Kindness</h1>
           <p className="mt-3 text-base md:text-lg text-slate-300">Cardano is the future of crypto stake with us.</p>
         </div>
-        {/* Primary CTA: Learn More scrolls to About */}
-        <button
-          className="group z-10 inline-flex h-11 md:h-12 items-center gap-2 rounded-xl border border-white bg-white px-5 md:px-6 text-sm md:text-base text-black outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 hover:shadow-[0_0_0_4px_rgba(255,255,255,0.5)] transition-shadow duration-200"
-          onClick={() => {
-            const target = document.getElementById('about');
-            target?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        >
-          <span className="font-semibold">Want to Know More?</span>
-        </button>
+        <div className="flex flex-wrap justify-center gap-4">
+          {/* Primary CTA: Stake with Us */}
+          <button
+            onClick={() => setStakingModalOpen(true)}
+            className="group z-10 inline-flex h-11 md:h-12 items-center gap-2 rounded-xl bg-sky-500 px-5 md:px-6 text-sm md:text-base text-white outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 hover:shadow-[0_0_0_4px_rgba(3,105,161,0.5)] transition-shadow duration-200"
+          >
+            <span className="font-semibold">Stake With Us</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5 transition-transform group-hover:translate-x-1">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </button>
+          {/* Secondary CTA: Learn More scrolls to About */}
+          <button
+            className="group z-10 inline-flex h-11 md:h-12 items-center gap-2 rounded-xl border border-white bg-white/10 px-5 md:px-6 text-sm md:text-base text-white outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 hover:bg-white/20 transition-colors duration-200"
+            onClick={() => {
+              const target = document.getElementById('about');
+              target?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <span className="font-semibold">Want to Know More?</span>
+          </button>
+        </div>
       </div>
+      <StakingModal isOpen={isStakingModalOpen} onClose={() => setStakingModalOpen(false)} />
     </div>
   );
 };
