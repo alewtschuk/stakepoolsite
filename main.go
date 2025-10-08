@@ -25,7 +25,7 @@ type PoolData struct {
 	LifetimeBlocks  int64   `json:"lifetimeBlocks"`
 	PledgeMet       string  `json:"pledgeMet"`
 	DeclaredPledge  string  `json:"declaredPledge"`
-	Margin          string  `json:"margin"`
+	Margin          int64   `json:"margin"`
 	SaturationFloat float64 `json:"saturationFloat"`
 }
 
@@ -103,18 +103,18 @@ func mustFetchPoolData() PoolData {
 
 	// Setup and build request
 	statsRequest := buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, "/stats")
-	//detailsRequest := buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, "")
+	detailsRequest := buildRequest(BASEURL, POOLID, HTTPCALL, APIKEY, "")
 
 	// Fetch API response
 	statsBody := fetchResponse(statsRequest)
-	//detailsBody := fetchResponse(detailsRequest)
+	detailsBody := fetchResponse(detailsRequest)
 
 	// Initalize and extract data into the struct
 	statsData := getResponseData(statsBody, PoolData{})
-
-	//detailsData := getResponseData(detailsBody, TempInfo{})
+	detailsData := getResponseData(detailsBody, TempInfo{})
 
 	fmt.Printf("Saturation: %v\nLive stake: %v\nPledge: %v\nBlocks Epoch: %v\nLifetime Blocks: %v\n", statsData.Saturation, statsData.LiveStake, statsData.Pledge, statsData.BlocksEpoch, statsData.LifetimeBlocks)
+	fmt.Printf("Status: %v\nDeclared Pledge: %v\nMargin: %v\n", detailsData.Status, detailsData.DeclaredPledge, detailsData.Margin)
 
 	liveStakeData, err := strconv.Atoi(statsData.LiveStake)
 	if err != nil {
@@ -131,15 +131,41 @@ func mustFetchPoolData() PoolData {
 		log.Fatalf("ERROR: Cannot convert saturation to integer")
 	}
 
+	pldgFloat, err := strconv.ParseFloat(detailsData.DeclaredPledge, 64)
+	if err != nil {
+		log.Fatalf("ERROR: Cannot convert saturation to integer")
+	}
+	marginNum, err := strconv.Atoi(detailsData.Margin)
+
 	liveStakeFloat := float64(liveStakeData)
 	pledgeFloat := float64(pledgeData)
 
 	stakedAda := liveStakeFloat / 1000000
 	pledgedAda := pledgeFloat / 1000000
+	initialPledge := pldgFloat / 1000000
 
 	statsData.LiveStake = fmt.Sprintf("%.2f", stakedAda)
 	statsData.Pledge = fmt.Sprintf("%.2f", pledgedAda)
 	statsData.SaturationFloat = saturationFloat
+	statsData.Margin = int64(marginNum)
+	statsData.DeclaredPledge = fmt.Sprintf("%.2f", initialPledge)
+
+	decPldg, err := strconv.Atoi(detailsData.DeclaredPledge)
+	if err != nil {
+		log.Fatalf("ERROR: Cannot convert saturation to integer")
+	}
+
+	if pledgeData >= decPldg {
+		statsData.PledgeMet = "✅"
+	} else {
+		statsData.PledgeMet = "❌"
+	}
+
+	if detailsData.Status == true {
+		statsData.PoolStatus = 100
+	} else {
+		statsData.PoolStatus = 0
+	}
 
 	return statsData
 }

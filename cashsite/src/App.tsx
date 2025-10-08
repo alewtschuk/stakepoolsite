@@ -368,6 +368,7 @@ interface PoolData {
   lifetimeBlocks: number;
   pledgeMet: string;
   declaredPledge: string;
+  margin: number;
 }
 
 function readPoolDataFromDom(): PoolData | null {
@@ -392,7 +393,8 @@ function readPoolDataFromDom(): PoolData | null {
       currentEpochBlocks: Number(d.blocksEpoch),
       lifetimeBlocks: Number(d.lifetimeBlocks),
       declaredPledge: String(d.declaredPledge),
-      pledgeMet: String(d.pledgeMet)
+      pledgeMet: String(d.pledgeMet),
+      margin: Number(d.margin),
     } as PoolData;
     if (!Object.values(maybe).some((v) => Number.isNaN(v))) return maybe;
   }
@@ -405,11 +407,20 @@ function readPoolDataFromDom(): PoolData | null {
 }
 
 function useAnimatedNumber(target: number, durationMs = 1200) {
-  const [value, setValue] = React.useState(0);
+  const [value, setValue] = React.useState(target);
+
   React.useEffect(() => {
+    // Check if the number has more than 2 decimal places
+    const hasTooManyDecimals = String(target).includes('.') && String(target).split('.')[1].length > 2;
+
+    if (hasTooManyDecimals) {
+      setValue(target);
+      return; // Don't animate
+    }
+
     let raf = 0;
     const start = performance.now();
-    const from = 0;
+    const from = value;
     const delta = target - from;
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
     const tick = (now: number) => {
@@ -420,8 +431,67 @@ function useAnimatedNumber(target: number, durationMs = 1200) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [target, durationMs]);
+
   return value;
 }
+
+const StatusGauge: React.FC<{
+  value: number;
+  min?: number;
+  max?: number;
+  size?: number;
+  strokeWidth?: number;
+  label: string;
+  color?: string;
+  suffix?: string;
+}> = ({ value, min = 0, max = 100, size = 140, strokeWidth = 12, label, color = '#22c55e', suffix = '%' }) => {
+  const clamped = Math.max(min, Math.min(max, value));
+  const progress = (clamped - min) / (max - min);
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dash = circumference;
+  const offset = circumference * (1 - progress);
+  if(value == 100) {
+    suffix = "Online"
+  } else {
+    suffix = "Offline"
+  }
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#262626"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${dash} ${dash}`}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="motion-safe:transition-[stroke-dashoffset] duration-700 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-2xl font-bold text-white">
+            {suffix}
+          </div>
+          <div className="text-sm text-slate-400">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Gauge: React.FC<{
   value: number;
@@ -467,7 +537,7 @@ const Gauge: React.FC<{
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="text-2xl font-bold text-white">
-            {(clamped)}{suffix}
+            {clamped.toFixed(2)}{suffix}
           </div>
           <div className="text-sm text-slate-400">{label}</div>
         </div>
@@ -475,6 +545,8 @@ const Gauge: React.FC<{
     </div>
   );
 };
+
+
 
 // ------- Data Section -------
 export const DataSection = () => {
@@ -490,6 +562,7 @@ export const DataSection = () => {
 
   const saturation = useAnimatedNumber(data?.saturationFloat ?? 0);
   const uptime = useAnimatedNumber(data?.status ?? 0);
+  const margin = useAnimatedNumber(data?.margin ?? 0);
 
   return (
     <section id="usage" className="relative bg-neutral-900 text-white py-16 md:py-24 border-t border-neutral-800 scroll-mt-20 md:scroll-mt-24">
@@ -505,7 +578,7 @@ export const DataSection = () => {
             <h3 className="text-lg font-semibold mb-6">Health</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 place-items-center">
               <Gauge value={saturation} label="Saturation" color="#60a5fa" />
-              <Gauge value={uptime} label="Status" color="#22c55e" />
+              <StatusGauge value={uptime} label="Status" color="#22c55e" />
             </div>
           </div>
 
@@ -537,6 +610,7 @@ export const DataSection = () => {
                 <div className="text-slate-400 text-sm">Blocks (Lifetime)</div>
                 <div className="text-2xl font-bold text-white break-words">{data?.lifetimeBlocks ?? 0}</div>
               </div>
+              <Gauge value={margin} label="Margin" color="#60a5fa" />
             </div>
           </div>
         </div>
