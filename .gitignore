@@ -6,8 +6,6 @@ cashsite/.env.local
 cashsite/.DS_Store
 
 # Go build artifacts
-*.exe
-*.out
 *.test
 *.tmp
 
@@ -20,7 +18,6 @@ yarn-error.log*
 
 # System files
 .DS_Store
-Thumbs.db
 
 # Environment & local scripts
 .env
