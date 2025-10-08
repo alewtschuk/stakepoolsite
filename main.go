@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type PoolData struct {
@@ -216,9 +214,9 @@ func getResponseData[T any](body []byte, dataStruct T) T {
 
 // }
 
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-}
+// func init() {
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Fatalf("Error loading .env file")
+// 	}
+// }
